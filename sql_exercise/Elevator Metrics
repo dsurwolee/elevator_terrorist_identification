@@ -1,0 +1,38 @@
+/* Elevator speed */
+
+create table elevator_records (
+	id varchar(4),
+	time_in timestamp,
+	time_out timestamp,
+	floor_in smallint,
+	floor_out smallint
+); 
+
+drop table elevator_records;
+
+copy elevator_records from '/Users/daniellee/Dropbox/Data_Mining/elevator_terrorist_detection/elevator.csv' delimiter ',' csv header;
+
+/* Metric #1 - Elevator speed approximated in terms of seconds of trip duration per one floor moved */
+
+alter table elevator_records 
+add column duration integer,
+add column floor_diff integer,
+add column velocity decimal(9,2);
+
+update elevator_records
+set duration = abs(extract(epoch from time_in - time_out)),
+	floor_diff = abs(floor_in - floor_out),
+	velocity = duration / floor_diff;
+
+/* Metric #2 - Passenger count */
+create view ts as
+SELECT datetime::timestamp
+FROM generate_series('2018-03-16', '2018-03-18', INTERVAL '1 second') datetime;
+
+select datetime, (select count(*) from elevator_records where datetime >= time_in and datetime <= time_out)
+from ts
+where datetime >= '2018-03-17 12:20:10';										
+
+
+
+
